@@ -1,0 +1,25 @@
+{
+  "name": "egg_app",
+  "version": "1.0.0",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron ."
+  },
+  "private": true,
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@electron/remote": "^2.1.2",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "electron": "^33.2.1",
+    "express": "^4.21.2",
+    "open": "^10.1.0",
+    "twitch": "^4.6.7",
+    "twitch-auth": "^4.6.7",
+    "ws": "^8.18.0"
+  }
+}
