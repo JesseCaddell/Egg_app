@@ -87,7 +87,7 @@ export function getAccessToken() {
 }
 
 // ------------------ Twitch EventSub WebSocket Integration ------------------
-export function startTwitchEventSub() {
+export function startTwitchEventSub(onRedemptionEvent) {
     if (!accessToken) {
         console.error('Access token not available. Authenticate with Twitch first.');
         return;
@@ -107,6 +107,7 @@ export function startTwitchEventSub() {
             subscribeToChannelPointRedemptions(message.payload.session.id);
         } else if (message.metadata?.message_type === 'notification') {
             console.log('Event Notification Received:', message.payload.event);
+            onRedemptionEvent(message.payload.event); // Send the event to the callback
         } else if (message.metadata?.message_type === 'session_keepalive') {
             console.log('Session keepalive received.');
         }
