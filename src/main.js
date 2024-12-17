@@ -2,16 +2,15 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
-import open from 'open'; // Import open at the top for simplicity
+import open from 'open'; // For opening URLs in browser
 import { setupAuthServer as setupTwitchAuth, startTwitchAuth, getAccessToken, getStreamerInfo } from './api/twitch.js';
-import { setupStreamlabsAuth, startStreamlabsAuth, connectToStreamlabsSocket } from './api/streamlabs.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
 
-// Create a single Express server for both Twitch and Streamlabs
+// Create a single Express server for Twitch
 const server = express();
 const PORT = 3000;
 
@@ -21,9 +20,6 @@ server.listen(PORT, () => {
 
 // Add Twitch routes
 setupTwitchAuth(server);
-
-// Add Streamlabs routes
-setupStreamlabsAuth(server);
 
 app.on('ready', () => {
     mainWindow = new BrowserWindow({
@@ -63,27 +59,6 @@ ipcMain.on('log-into-twitch', async () => {
     } catch (error) {
         console.error('Error during Twitch login:', error.message);
         mainWindow.webContents.send('login-status', 'Login failed');
-    }
-});
-
-// Handle "Log into Streamlabs" button click
-ipcMain.on('log-into-streamlabs', async () => {
-    try {
-        const authURL = await startStreamlabsAuth();
-        console.log('Opening Streamlabs login URL:', authURL);
-
-        // Use the open package directly to open the URL
-        await open(authURL);
-    } catch (error) {
-        console.error('Error during Streamlabs login:', error.message);
-    }
-});
-
-// Handle "Connect to Streamlabs WebSocket" button click
-ipcMain.on('connect-streamlabs-socket', () => {
-    const socket = connectToStreamlabsSocket();
-    if (socket) {
-        console.log('Streamlabs WebSocket connection initialized');
     }
 });
 

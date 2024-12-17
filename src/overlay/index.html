@@ -12,30 +12,14 @@
 <button id="login-button">Log into Twitch</button>
 <p id="status">Status: Not logged in</p>
 
-<!-- Log into Streamlabs Button -->
-<button id="streamlabs-login-button">Log into Streamlabs</button>
-<button id="streamlabs-connect-button">Connect to Streamlabs</button>
-
 <!-- Add the script at the end of the body -->
 <script>
     const loginButton = document.getElementById('login-button');
     const statusText = document.getElementById('status');
-    const streamlabsLoginButton = document.getElementById('streamlabs-login-button');
-    const streamlabsConnectButton = document.getElementById('streamlabs-connect-button');
 
     loginButton.addEventListener('click', () => {
         console.log('Log into Twitch button clicked'); // Debugging log
         window.electronAPI.logIntoTwitch();
-    });
-
-    streamlabsLoginButton.addEventListener('click', () => {
-        console.log('Log into Streamlabs button clicked'); // Debugging log
-        window.electronAPI.logIntoStreamlabs();
-    });
-
-    streamlabsConnectButton.addEventListener('click', () => {
-        console.log('Connect to Streamlabs button clicked'); // Debugging log
-        window.electronAPI.connectToStreamlabsSocket();
     });
 
     window.electronAPI.receiveLoginStatus((status) => {

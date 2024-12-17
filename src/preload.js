@@ -5,6 +5,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
     receiveLoginStatus: (callback) => {
         ipcRenderer.on('login-status', (event, status) => callback(status));
     },
-    logIntoStreamlabs: () => ipcRenderer.send('log-into-streamlabs'),
-    connectToStreamlabsSocket: () => ipcRenderer.send('connect-streamlabs-socket'),
 });
