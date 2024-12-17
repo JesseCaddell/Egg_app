@@ -142,6 +142,16 @@
             width: calc(50% - 20px); /* Two eggs split evenly */
         }
 
+        /* Hide all tabs by default except the home tab */
+        .tab-content {
+            display: none;
+        }
+
+        /* Show home-tab by default */
+        #home-tab {
+            display: block;
+        }
+
     </style>
 </head>
 <body>
@@ -174,19 +184,40 @@
 
     <!-- Main Content -->
     <div class="content" id="main-content">
-        <p>No Egg Selected!</p>
-        <div class="button-group">
-            <button id="save-state-button">Save Current State</button>
-            <button id="reset-state-button">Reset State</button>
+        <!-- Home Tab -->
+        <div class="tab-content" id="home-tab">
+            <p>No Egg Selected!</p>
+            <div class="button-group">
+                <button id="save-state-button">Save Current State</button>
+                <button id="reset-state-button">Reset State</button>
+            </div>
+        </div>
+
+        <!-- Eggs Tab -->
+        <div class="tab-content" id="eggs-tab">
+            <h2>Select Your Eggs</h2>
+            <button id="add-egg-button" style="margin-bottom: 15px;">Add Egg</button>
+            <div id="egg-list" style="margin-top: 10px;"></div>
+        </div>
+
+        <!-- Redeems Tab -->
+        <div class="tab-content" id="redeems-tab">
+            <h2>Redeems</h2>
+            <p>Content for Redeems Tab</p>
+        </div>
+
+        <!-- Hatching Tab -->
+        <div class="tab-content" id="hatching-tab">
+            <h2>Hatching</h2>
+            <p>Content for Hatching Tab</p>
+        </div>
+
+        <!-- Creatures Tab -->
+        <div class="tab-content" id="creatures-tab">
+            <h2>Creatures</h2>
+            <p>Content for Creatures Tab</p>
         </div>
     </div>
-</div>
-
-<!-- Eggs Tab -->
-<div id="eggs-tab" style="display: none;">
-    <h2>Select Your Eggs</h2>
-    <button id="add-egg-button" style="margin-bottom: 15px;">Add Egg</button>
-    <div id="egg-list" style="margin-top: 10px;"></div>
 </div>
 
 <!-- Script Logic -->
@@ -194,11 +225,9 @@
     // DOM Elements
     const loginScreen = document.getElementById('login-screen');
     const mainApp = document.getElementById('main-app');
-    const streamerStatus = document.getElementById('streamer-status');
     const loginButton = document.getElementById('login-button');
     const saveStateButton = document.getElementById('save-state-button');
     const resetStateButton = document.getElementById('reset-state-button');
-    const mainContent = document.getElementById('main-content');
     const addEggButton = document.getElementById('add-egg-button');
     const eggList = document.getElementById('egg-list');
 
@@ -214,8 +243,6 @@
     window.electronAPI.receiveLoginStatus((status) => {
         console.log('Login Status:', status);
 
-        // Safely retrieve the DOM elements
-        const streamerName = document.getElementById('streamer-name');
         const loggedInStatus = document.getElementById('logged-in-status');
 
         if (loggedInStatus) {
@@ -227,14 +254,8 @@
 
         if (status.includes('Logged in')) {
             console.log('Login successful. Transitioning UI...');
-
-            // Show the main UI only if elements exist
-            const loginScreen = document.getElementById('login-screen');
-            const mainApp = document.getElementById('main-app');
-            if (loginScreen && mainApp) {
-                loginScreen.style.display = 'none';
-                mainApp.style.display = 'flex';
-            }
+            loginScreen.style.display = 'none';
+            mainApp.style.display = 'flex';
         } else {
             console.log('Login failed:', status);
         }
@@ -249,15 +270,12 @@
         const twitchLink = document.getElementById('twitch-link');
         const streamerInfo = document.getElementById('streamer-info');
 
-        // Update profile image and Twitch link
         profileImage.src = imageUrl;
         twitchLink.href = `https://www.twitch.tv/${name}`;
         profileImage.style.display = 'block';
 
-        // Show the streamer info and set text
         streamerInfo.style.display = 'block';
         loggedInStatus.textContent = `Logged in as\n${name}`;
-
     });
 
     // Save State Button
@@ -282,10 +300,9 @@
         alert(message);
     });
 
-    // Load eggs when navigating to the Eggs tab
+    // Load eggs into egg-list
     function loadEggs() {
         eggList.innerHTML = ''; // Clear the current list
-
         const eggContainer = document.createElement('div');
         eggContainer.id = 'egg-list';
         eggContainer.style.display = 'flex';
@@ -301,19 +318,19 @@
             else if (selectedEggs.length === 2) eggItem.classList.add('double');
 
             eggItem.innerHTML = `
-            <div>
-                ${
+                <div>
+                    ${
                 egg.filePath.endsWith('.mp4')
                     ? `<video src="${egg.filePath}" width="100" height="100" controls></video>`
                     : `<img src="${egg.filePath}" width="100" height="100" alt="egg"/>`
             }
-            </div>
-            <div>
-                <p id="egg-name-${index}">${egg.name}</p>
-                <button onclick="editEggName(${index})">Edit Name</button>
-                <button onclick="removeEgg(${index})" style="margin-top: 5px;">Remove</button>
-            </div>
-        `;
+                </div>
+                <div>
+                    <p id="egg-name-${index}">${egg.name}</p>
+                    <button onclick="editEggName(${index})">Edit Name</button>
+                    <button onclick="removeEgg(${index})" style="margin-top: 5px;">Remove</button>
+                </div>
+            `;
             eggContainer.appendChild(eggItem);
         });
 
@@ -331,37 +348,34 @@
     });
 
     // Remove an egg
-    function removeEgg(index) {
-        selectedEggs.splice(index, 1); // Remove from array
-        loadEggs(); // Refresh list
-        window.electronAPI.saveEggs(selectedEggs); // Update save state
-    }
+    window.removeEgg = function(index) {
+        selectedEggs.splice(index, 1);
+        loadEggs();
+        window.electronAPI.saveEggs(selectedEggs);
+    };
 
     // Edit egg name
-    function editEggName(index) {
+    window.editEggName = function(index) {
         const eggNameElement = document.getElementById(`egg-name-${index}`);
         const currentName = selectedEggs[index].name;
-
-        // Replace the name with an input box and save button
         eggNameElement.innerHTML = `
-        <input type="text" id="edit-input-${index}" value="${currentName}" style="width: 80px; margin-right: 5px;">
-        <button onclick="saveEggName(${index})">Save</button>
-    `;
-    }
+            <input type="text" id="edit-input-${index}" value="${currentName}" style="width: 80px; margin-right: 5px;">
+            <button onclick="saveEggName(${index})">Save</button>
+        `;
+    };
 
-    // Save egg names
-    function saveEggName(index) {
+    // Save egg name
+    window.saveEggName = function(index) {
         const inputBox = document.getElementById(`edit-input-${index}`);
         const newName = inputBox.value.trim();
-
         if (newName) {
-            selectedEggs[index].name = newName; // Update name
-            loadEggs(); // Reload the eggs to reflect changes
-            window.electronAPI.saveEggs(selectedEggs); // Save state
+            selectedEggs[index].name = newName;
+            loadEggs();
+            window.electronAPI.saveEggs(selectedEggs);
         }
-    }
+    };
 
-    // update eggs upon restoration
+    // Restore eggs on load
     window.addEventListener('DOMContentLoaded', () => {
         window.electronAPI.loadEggs((eggs) => {
             selectedEggs = eggs.map((egg, index) =>
@@ -374,17 +388,18 @@
     // Navigation Logic
     function navigate(tab) {
         console.log(`Navigating to: ${tab}`);
-
         // Hide all tabs
-        document.getElementById('main-content').innerHTML = '';
-        document.getElementById('eggs-tab').style.display = 'none';
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
 
-        if (tab === 'eggs') {
-            document.getElementById('main-content').appendChild(document.getElementById('eggs-tab'));
-            document.getElementById('eggs-tab').style.display = 'block';
-            loadEggs(); // Load eggs on navigation
+        // Show the requested tab
+        const targetTab = document.getElementById(`${tab}-tab`);
+        if (targetTab) {
+            targetTab.style.display = 'block';
+            if (tab === 'eggs') {
+                loadEggs();
+            }
         } else {
-            document.getElementById('main-content').innerHTML = `<p>Currently in: ${tab.charAt(0).toUpperCase() + tab.slice(1)} Tab</p>`;
+            console.error(`Tab "${tab}" not found.`);
         }
     }
 </script>
