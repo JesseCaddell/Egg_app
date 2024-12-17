@@ -21,6 +21,11 @@ server.listen(PORT, () => {
 // Add Twitch routes
 setupTwitchAuth(server);
 
+// Add overlay route
+server.get('/overlay', (req, res) => {
+    res.sendFile(path.join(__dirname, 'overlay/overlay.html'));
+});
+
 app.on('ready', () => {
     mainWindow = new BrowserWindow({
         width: 800,
