@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     logIntoTwitch: () => ipcRenderer.send('log-into-twitch'),
     saveState: () => ipcRenderer.send('save-state'),
     resetState: () => ipcRenderer.send('reset-state'),
+    selectEggFile: () => ipcRenderer.invoke('select-egg-file'),
+    saveEggs: (eggFiles) => ipcRenderer.send('save-eggs', eggFiles),
 
     receiveLoginStatus: (callback) => {
         ipcRenderer.on('login-status', (event, status) => callback(status));
@@ -17,5 +19,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onStateReset: (callback) => {
         ipcRenderer.on('state-reset', (event, message) => callback(message));
     },
+    loadEggs: (callback) => ipcRenderer.on('load-eggs', (event, eggs) => callback(eggs)),
 });
 

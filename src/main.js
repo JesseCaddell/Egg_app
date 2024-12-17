@@ -6,11 +6,13 @@ import { WebSocketServer } from 'ws';
 import fs from 'fs';
 import { setupAuthServer as setupTwitchAuth, startTwitchAuth, getAccessToken, getStreamerInfo } from './api/twitch.js';
 import { startTwitchEventSub } from './api/twitch.js';
+import { dialog } from 'electron';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
+let state = { eggs: [] }; // Default state
 
 // ---------- Express Server for OAuth and Overlay ----------
 const server = express();
@@ -180,6 +182,31 @@ ipcMain.on('save-state', () => {
 ipcMain.on('reset-state', () => {
     resetState();
     mainWindow.webContents.send('state-reset', 'State has been reset to default.');
+});
+
+// Handle egg file selection
+ipcMain.handle('select-egg-file', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+        title: 'Select an Egg Image or Video',
+        properties: ['openFile'],
+        filters: [
+            { name: 'Media Files', extensions: ['jpg', 'png', 'gif', 'mp4'] },
+        ],
+    });
+
+    if (canceled || filePaths.length === 0) return null;
+    return filePaths[0];
+});
+
+// Handle saving eggs to state
+ipcMain.on('save-eggs', (event, eggFiles) => {
+    state.eggs = eggFiles;
+    saveState();
+});
+
+// restore egg state
+ipcMain.on('get-eggs', (event) => {
+    event.reply('load-eggs', state.eggs || []);
 });
 
 

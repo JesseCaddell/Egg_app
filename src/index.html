@@ -159,6 +159,14 @@
     </div>
 </div>
 
+<!-- Eggs Tab -->
+<div id="eggs-tab" style="display: none;">
+    <h2>Select Your Eggs</h2>
+    <p>You can select up to 5 eggs (images or videos)</p>
+    <button id="add-egg-button" style="margin-bottom: 15px;">Add Egg</button>
+    <div id="egg-list" style="margin-top: 10px;"></div>
+</div>
+
 <!-- Script Logic -->
 <script>
     // DOM Elements
@@ -169,6 +177,10 @@
     const saveStateButton = document.getElementById('save-state-button');
     const resetStateButton = document.getElementById('reset-state-button');
     const mainContent = document.getElementById('main-content');
+    const addEggButton = document.getElementById('add-egg-button');
+    const eggList = document.getElementById('egg-list');
+
+    let selectedEggs = [];
 
     // Trigger Twitch login
     loginButton.addEventListener('click', () => {
@@ -179,13 +191,28 @@
     // Handle login status and UI transition
     window.electronAPI.receiveLoginStatus((status) => {
         console.log('Login Status:', status);
-        if (status.includes('Logged in')) {
-            console.log('Login successful. Transitioning to main content...');
 
-            // Transition to Main UI
-            loginScreen.style.display = 'none';
-            mainApp.style.display = 'flex';
-            streamerStatus.textContent = status;
+        // Safely retrieve the DOM elements
+        const streamerName = document.getElementById('streamer-name');
+        const loggedInStatus = document.getElementById('logged-in-status');
+
+        if (loggedInStatus) {
+            // Update login status in the sidebar
+            loggedInStatus.textContent = status;
+        } else {
+            console.warn('Element "logged-in-status" not found in DOM.');
+        }
+
+        if (status.includes('Logged in')) {
+            console.log('Login successful. Transitioning UI...');
+
+            // Show the main UI only if elements exist
+            const loginScreen = document.getElementById('login-screen');
+            const mainApp = document.getElementById('main-app');
+            if (loginScreen && mainApp) {
+                loginScreen.style.display = 'none';
+                mainApp.style.display = 'flex';
+            }
         } else {
             console.log('Login failed:', status);
         }
@@ -233,10 +260,73 @@
         alert(message);
     });
 
+    // Load eggs when navigating to the Eggs tab
+    function loadEggs() {
+        eggList.innerHTML = '';
+        selectedEggs.forEach((filePath, index) => {
+            const eggItem = document.createElement('div');
+            eggItem.style.marginBottom = '10px';
+            eggItem.innerHTML = `
+            <div>
+                <span>Egg ${index + 1}: ${filePath}</span>
+                <button onclick="removeEgg(${index})" style="margin-left: 10px;">Remove</button>
+            </div>
+            <div>
+                ${
+                filePath.endsWith('.mp4')
+                    ? `<video src="${filePath}" width="100" height="100" controls></video>`
+                    : `<img src="${filePath}" width="100" height="100" alt="egg"/>`
+            }
+            </div>
+        `;
+            eggList.appendChild(eggItem);
+        });
+    }
+    // Add new egg via file dialog
+    addEggButton.addEventListener('click', async () => {
+        if (selectedEggs.length >= 5) {
+            alert('You can only select up to 5 eggs.');
+            return;
+        }
+
+        const result = await window.electronAPI.selectEggFile();
+        if (result) {
+            selectedEggs.push(result);
+            loadEggs(); // Refresh the list
+            window.electronAPI.saveEggs(selectedEggs); // Save to state
+        }
+    });
+
+    // Remove an egg
+    function removeEgg(index) {
+        selectedEggs.splice(index, 1); // Remove from array
+        loadEggs(); // Refresh list
+        window.electronAPI.saveEggs(selectedEggs); // Update save state
+    }
+
+    // update eggs upon restoration
+    window.addEventListener('DOMContentLoaded', () => {
+        window.electronAPI.loadEggs((eggs) => {
+            selectedEggs = eggs;
+            loadEggs();
+        });
+    });
+
     // Navigation Logic
     function navigate(tab) {
         console.log(`Navigating to: ${tab}`);
-        mainContent.innerHTML = `<p>Currently in: ${tab.charAt(0).toUpperCase() + tab.slice(1)} Tab</p>`;
+
+        // Hide all tabs
+        document.getElementById('main-content').innerHTML = '';
+        document.getElementById('eggs-tab').style.display = 'none';
+
+        if (tab === 'eggs') {
+            document.getElementById('main-content').appendChild(document.getElementById('eggs-tab'));
+            document.getElementById('eggs-tab').style.display = 'block';
+            loadEggs(); // Load eggs on navigation
+        } else {
+            document.getElementById('main-content').innerHTML = `<p>Currently in: ${tab.charAt(0).toUpperCase() + tab.slice(1)} Tab</p>`;
+        }
     }
 </script>
 </body>
