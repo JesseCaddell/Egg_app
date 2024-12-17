@@ -1,6 +1,7 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
 import open from 'open';
+import WebSocket from 'ws';
 import express from 'express';
 
 dotenv.config();
@@ -8,9 +9,11 @@ dotenv.config();
 const CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 const REDIRECT_URI = process.env.TWITCH_REDIRECT_URI;
+const WEBSOCKET_URL = 'wss://eventsub.wss.twitch.tv/ws';
 
 let accessToken;
 
+// ------------------ Twitch OAuth Flow ------------------
 export async function startTwitchAuth() {
     const authURL = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(
         REDIRECT_URI
@@ -72,6 +75,7 @@ export async function getStreamerInfo() {
 
         const user = response.data.data[0];
         console.log('Logged-in User:', user.display_name);
+        console.log('Broadcaster ID:', user.id);
         return user;
     } catch (error) {
         console.error('Error fetching streamer info:', error.message);
@@ -80,4 +84,82 @@ export async function getStreamerInfo() {
 
 export function getAccessToken() {
     return accessToken;
+}
+
+// ------------------ Twitch EventSub WebSocket Integration ------------------
+export function startTwitchEventSub() {
+    if (!accessToken) {
+        console.error('Access token not available. Authenticate with Twitch first.');
+        return;
+    }
+
+    let ws;
+    ws = new WebSocket(WEBSOCKET_URL);
+
+    ws.on('open', () => {
+        console.log('Connected to Twitch EventSub WebSocket');
+    });
+
+    ws.on('message', (data) => {
+        const message = JSON.parse(data);
+        if (message.metadata?.message_type === 'session_welcome') {
+            console.log('Session connected. Subscribing to events...');
+            subscribeToChannelPointRedemptions(message.payload.session.id);
+        } else if (message.metadata?.message_type === 'notification') {
+            console.log('Event Notification Received:', message.payload.event);
+        } else if (message.metadata?.message_type === 'session_keepalive') {
+            console.log('Session keepalive received.');
+        }
+    });
+
+    ws.on('close', (code, reason) => {
+        console.log(`WebSocket closed. Code: ${code}, Reason: ${reason}`);
+        reconnectWebSocket();
+    });
+
+    ws.on('error', (error) => {
+        console.error('WebSocket Error:', error.message);
+        reconnectWebSocket();
+    });
+}
+
+function reconnectWebSocket() {
+    console.log('Reconnecting to WebSocket in 5 seconds...');
+    setTimeout(() => startTwitchEventSub(), 5000);
+}
+
+async function subscribeToChannelPointRedemptions(sessionId) {
+    try {
+        const user = await getStreamerInfo();
+        if (!user || !user.id) {
+            console.error('Failed to fetch broadcaster user ID.');
+            return;
+        }
+
+        const response = await axios.post(
+            'https://api.twitch.tv/helix/eventsub/subscriptions',
+            {
+                type: 'channel.channel_points_custom_reward_redemption.add',
+                version: '1',
+                condition: {
+                    broadcaster_user_id: user.id, // Use dynamically fetched user ID
+                },
+                transport: {
+                    method: 'websocket',
+                    session_id: sessionId,
+                },
+            },
+            {
+                headers: {
+                    'Client-ID': CLIENT_ID,
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        console.log('Successfully subscribed to Channel Point Redemptions:', response.data);
+    } catch (error) {
+        console.error('Error subscribing to Channel Point Redemptions:', error.response?.data || error.message);
+    }
 }
