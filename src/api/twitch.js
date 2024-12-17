@@ -2,7 +2,6 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import open from 'open';
 import WebSocket from 'ws';
-import express from 'express';
 
 dotenv.config();
 
