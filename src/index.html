@@ -15,10 +15,14 @@
 <!-- Save State Button -->
 <button id="save-state-button">Save Current State</button>
 
+<!-- Reset State Button -->
+<button id="reset-state-button">Reset State</button>
+
 <script>
     const loginButton = document.getElementById('login-button');
     const statusText = document.getElementById('status');
     const saveStateButton = document.getElementById('save-state-button');
+    const resetStateButton = document.getElementById('reset-state-button');
 
     loginButton.addEventListener('click', () => {
         console.log('Log into Twitch button clicked'); // Debugging log
@@ -44,6 +48,16 @@
     window.electronAPI.onStateSaved((message) => {
         console.log(message);
         alert(message); // Notify the user that the state has been saved
+    });
+
+    resetStateButton.addEventListener('click', () => {
+        console.log('Reset State button clicked');
+        window.electronAPI.resetState();
+    });
+
+    window.electronAPI.onStateReset((message) => {
+        console.log(message);
+        alert(message); // Notify the user that the state has been reset
     });
 </script>
 </body>

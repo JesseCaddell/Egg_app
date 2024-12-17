@@ -18,10 +18,55 @@
             width: 50%;
             height: auto;
         }
+        #message {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 2em;
+            font-family: Arial, sans-serif;
+        }
     </style>
 </head>
 <body>
-<!-- Placeholder Animation -->
-<img id="animation" src="https://art.ngfiles.com/images/1934000/1934530_mr300milesof_kirby-running-animation-cycle.gif?f1625608502" alt="Animation Placeholder">
+<!-- Display the animation -->
+<img id="animation" src="" alt="Animation" style="display: none;">
+<div id="message"></div>
+
+<script>
+    const socket = new WebSocket('ws://localhost:8080');
+    const animation = document.getElementById('animation');
+    const message = document.getElementById('message');
+
+    socket.onopen = () => {
+        console.log('Connected to WebSocket server');
+    };
+
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Received Event:', data);
+
+        if (data.type === 'channel_point_redemption') {
+            // Update the message
+            message.textContent = `${data.user} redeemed: ${data.reward}`;
+
+            // Show the animation
+            animation.src = 'https://art.ngfiles.com/images/1934000/1934530_mr300milesof_kirby-running-animation-cycle.gif'; // Replace with actual animation path
+            animation.style.display = 'block';
+
+            // Hide the animation after 5 seconds
+            setTimeout(() => {
+                animation.style.display = 'none';
+                message.textContent = '';
+            }, 5000);
+        }
+    };
+
+    socket.onerror = (error) => {
+        console.error('WebSocket Error:', error);
+    };
+</script>
 </body>
 </html>
+
