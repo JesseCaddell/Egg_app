@@ -12,10 +12,13 @@
 <button id="login-button">Log into Twitch</button>
 <p id="status">Status: Not logged in</p>
 
-<!-- Add the script at the end of the body -->
+<!-- Save State Button -->
+<button id="save-state-button">Save Current State</button>
+
 <script>
     const loginButton = document.getElementById('login-button');
     const statusText = document.getElementById('status');
+    const saveStateButton = document.getElementById('save-state-button');
 
     loginButton.addEventListener('click', () => {
         console.log('Log into Twitch button clicked'); // Debugging log
@@ -23,8 +26,24 @@
     });
 
     window.electronAPI.receiveLoginStatus((status) => {
-        console.log('Received login status:', status); // Debugging log
+        console.log('Received login status:', status);
         statusText.textContent = `Status: ${status}`;
+
+        // Trigger EventSub WebSocket only if login is successful
+        if (status.includes('Logged in')) {
+            console.log('Starting Twitch EventSub...');
+            window.electronAPI.startTwitchEventSub();
+        }
+    });
+
+    saveStateButton.addEventListener('click', () => {
+        console.log('Save State button clicked');
+        window.electronAPI.saveState();
+    });
+
+    window.electronAPI.onStateSaved((message) => {
+        console.log(message);
+        alert(message); // Notify the user that the state has been saved
     });
 </script>
 </body>
