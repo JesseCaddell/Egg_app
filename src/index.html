@@ -119,6 +119,29 @@
             margin: 0;
         }
 
+        #egg-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center; /* Center eggs initially */
+            gap: 20px; /* Spacing between eggs */
+        }
+
+        .egg-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: calc(33.33% - 20px); /* 3 columns grid layout when possible */
+            max-width: 200px;
+        }
+
+        .egg-item.single {
+            width: 100%; /* Single egg takes full width */
+        }
+
+        .egg-item.double {
+            width: calc(50% - 20px); /* Two eggs split evenly */
+        }
+
     </style>
 </head>
 <body>
@@ -162,7 +185,6 @@
 <!-- Eggs Tab -->
 <div id="eggs-tab" style="display: none;">
     <h2>Select Your Eggs</h2>
-    <p>You can select up to 5 eggs (images or videos)</p>
     <button id="add-egg-button" style="margin-bottom: 15px;">Add Egg</button>
     <div id="egg-list" style="margin-top: 10px;"></div>
 </div>
@@ -262,38 +284,49 @@
 
     // Load eggs when navigating to the Eggs tab
     function loadEggs() {
-        eggList.innerHTML = '';
-        selectedEggs.forEach((filePath, index) => {
+        eggList.innerHTML = ''; // Clear the current list
+
+        const eggContainer = document.createElement('div');
+        eggContainer.id = 'egg-list';
+        eggContainer.style.display = 'flex';
+        eggContainer.style.flexWrap = 'wrap';
+        eggContainer.style.gap = '20px';
+
+        selectedEggs.forEach((egg, index) => {
             const eggItem = document.createElement('div');
-            eggItem.style.marginBottom = '10px';
+            eggItem.classList.add('egg-item'); // Base class
+
+            // Dynamically adjust layout for single and double eggs
+            if (selectedEggs.length === 1) eggItem.classList.add('single');
+            else if (selectedEggs.length === 2) eggItem.classList.add('double');
+
             eggItem.innerHTML = `
             <div>
-                <span>Egg ${index + 1}: ${filePath}</span>
-                <button onclick="removeEgg(${index})" style="margin-left: 10px;">Remove</button>
-            </div>
-            <div>
                 ${
-                filePath.endsWith('.mp4')
-                    ? `<video src="${filePath}" width="100" height="100" controls></video>`
-                    : `<img src="${filePath}" width="100" height="100" alt="egg"/>`
+                egg.filePath.endsWith('.mp4')
+                    ? `<video src="${egg.filePath}" width="100" height="100" controls></video>`
+                    : `<img src="${egg.filePath}" width="100" height="100" alt="egg"/>`
             }
             </div>
+            <div>
+                <p id="egg-name-${index}">${egg.name}</p>
+                <button onclick="editEggName(${index})">Edit Name</button>
+                <button onclick="removeEgg(${index})" style="margin-top: 5px;">Remove</button>
+            </div>
         `;
-            eggList.appendChild(eggItem);
+            eggContainer.appendChild(eggItem);
         });
+
+        eggList.appendChild(eggContainer);
     }
+
     // Add new egg via file dialog
     addEggButton.addEventListener('click', async () => {
-        if (selectedEggs.length >= 5) {
-            alert('You can only select up to 5 eggs.');
-            return;
-        }
-
         const result = await window.electronAPI.selectEggFile();
         if (result) {
-            selectedEggs.push(result);
-            loadEggs(); // Refresh the list
-            window.electronAPI.saveEggs(selectedEggs); // Save to state
+            selectedEggs.push({ name: `Egg ${selectedEggs.length + 1}`, filePath: result });
+            loadEggs();
+            window.electronAPI.saveEggs(selectedEggs);
         }
     });
 
@@ -304,10 +337,36 @@
         window.electronAPI.saveEggs(selectedEggs); // Update save state
     }
 
+    // Edit egg name
+    function editEggName(index) {
+        const eggNameElement = document.getElementById(`egg-name-${index}`);
+        const currentName = selectedEggs[index].name;
+
+        // Replace the name with an input box and save button
+        eggNameElement.innerHTML = `
+        <input type="text" id="edit-input-${index}" value="${currentName}" style="width: 80px; margin-right: 5px;">
+        <button onclick="saveEggName(${index})">Save</button>
+    `;
+    }
+
+    // Save egg names
+    function saveEggName(index) {
+        const inputBox = document.getElementById(`edit-input-${index}`);
+        const newName = inputBox.value.trim();
+
+        if (newName) {
+            selectedEggs[index].name = newName; // Update name
+            loadEggs(); // Reload the eggs to reflect changes
+            window.electronAPI.saveEggs(selectedEggs); // Save state
+        }
+    }
+
     // update eggs upon restoration
     window.addEventListener('DOMContentLoaded', () => {
         window.electronAPI.loadEggs((eggs) => {
-            selectedEggs = eggs;
+            selectedEggs = eggs.map((egg, index) =>
+                typeof egg === 'string' ? { name: `Egg ${index + 1}`, filePath: egg } : egg
+            );
             loadEggs();
         });
     });
