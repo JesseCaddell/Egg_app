@@ -6,26 +6,52 @@
     <title>Egg Application</title>
     <style>
         body {
-            display: flex;
             margin: 0;
             font-family: Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        /* Sidebar styling */
+        /* Login Page */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            background-color: #ecf0f1;
+            text-align: center;
+        }
+
+        #login-screen button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 5px;
+        }
+
+        /* Main Page - Sidebar and Content */
+        #main-app {
+            display: none; /* Hidden until logged in */
+            height: 100%;
+            display: flex;
+        }
+
         .sidebar {
             width: 200px;
             background-color: #2c3e50;
             color: #ecf0f1;
-            height: 100vh;
+            height: 100%;
             padding: 20px;
             box-sizing: border-box;
         }
 
         .sidebar h2 {
+            margin: 0 0 20px;
             font-size: 20px;
-            margin: 0 0 20px 0;
             font-weight: bold;
-            color: #ecf0f1;
         }
 
         .sidebar button {
@@ -44,87 +70,173 @@
             background-color: #34495e;
         }
 
-        /* Main content area */
+        #streamer-status {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            color: #ecf0f1;
+            font-size: 14px;
+        }
+
         .content {
             flex: 1;
-            background-color: #ecf0f1;
             padding: 50px;
             text-align: center;
-        }
-
-        .content h1 {
-            font-size: 36px;
-            margin: 0;
-        }
-
-        .content p {
-            font-size: 18px;
-            margin-top: 10px;
-            color: #7f8c8d;
+            background-color: #ecf0f1;
+            overflow: auto;
         }
 
         /* Buttons section */
-        .button-group {
-            margin-top: 40px;
-        }
-
         .button-group button {
-            margin: 0 10px;
+            margin: 10px;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
         }
+
+        /* Streamer Info */
+        #streamer-info {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            text-align: center;
+            width: 160px; /* Limit the width to avoid overflow */
+        }
+
+        #profile-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: block;
+            margin: 0 auto 5px auto;
+        }
+
+        #logged-in-status {
+            color: #ecf0f1;
+            font-size: 12px;
+            word-wrap: break-word; /* Enable text wrapping */
+            line-height: 1.2;
+            margin: 0;
+        }
+
     </style>
 </head>
 <body>
-<!-- Sidebar -->
-<div class="sidebar">
-    <h2>Egg Application</h2>
-    <button onclick="navigate('home')">Home</button>
-    <button onclick="navigate('eggs')">Eggs</button>
-    <button onclick="navigate('redeems')">Redeems</button>
-    <button onclick="navigate('hatching')">Hatching</button>
-    <button onclick="navigate('creatures')">Creatures</button>
+<!-- Login Screen -->
+<div id="login-screen">
+    <div>
+        <h1>Welcome to Egg Application</h1>
+        <button id="login-button">Log into Twitch</button>
+    </div>
 </div>
 
-<!-- Main content area -->
-<div class="content" id="main-content">
-    <p>No Egg Selected!</p>
+<!-- Main Application -->
+<div id="main-app">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Egg Application</h2>
+        <button onclick="navigate('home')">Home</button>
+        <button onclick="navigate('eggs')">Eggs</button>
+        <button onclick="navigate('redeems')">Redeems</button>
+        <button onclick="navigate('hatching')">Hatching</button>
+        <button onclick="navigate('creatures')">Creatures</button>
+        <!-- Streamer Info -->
+        <div id="streamer-info" style="display: none;">
+            <a id="twitch-link" target="_blank" style="text-decoration: none;">
+                <img id="profile-image" src="" alt="Profile Image" />
+            </a>
+            <p id="logged-in-status">Not logged in</p>
+        </div>
+    </div>
 
-    <div class="button-group">
-        <button id="save-state-button">Save Current State</button>
-        <button id="reset-state-button">Reset State</button>
+    <!-- Main Content -->
+    <div class="content" id="main-content">
+        <p>No Egg Selected!</p>
+        <div class="button-group">
+            <button id="save-state-button">Save Current State</button>
+            <button id="reset-state-button">Reset State</button>
+        </div>
     </div>
 </div>
 
 <!-- Script Logic -->
 <script>
+    // DOM Elements
+    const loginScreen = document.getElementById('login-screen');
+    const mainApp = document.getElementById('main-app');
+    const streamerStatus = document.getElementById('streamer-status');
+    const loginButton = document.getElementById('login-button');
     const saveStateButton = document.getElementById('save-state-button');
     const resetStateButton = document.getElementById('reset-state-button');
+    const mainContent = document.getElementById('main-content');
 
+    // Trigger Twitch login
+    loginButton.addEventListener('click', () => {
+        console.log('Log into Twitch button clicked');
+        window.electronAPI.logIntoTwitch();
+    });
+
+    // Handle login status and UI transition
+    window.electronAPI.receiveLoginStatus((status) => {
+        console.log('Login Status:', status);
+        if (status.includes('Logged in')) {
+            console.log('Login successful. Transitioning to main content...');
+
+            // Transition to Main UI
+            loginScreen.style.display = 'none';
+            mainApp.style.display = 'flex';
+            streamerStatus.textContent = status;
+        } else {
+            console.log('Login failed:', status);
+        }
+    });
+
+    window.electronAPI.onStreamerInfo((data) => {
+        const {name, profileImage: imageUrl} = data;
+
+        // Update profile image and Twitch link
+        const profileImage = document.getElementById('profile-image');
+        const loggedInStatus = document.getElementById('logged-in-status');
+        const twitchLink = document.getElementById('twitch-link');
+        const streamerInfo = document.getElementById('streamer-info');
+
+        // Update profile image and Twitch link
+        profileImage.src = imageUrl;
+        twitchLink.href = `https://www.twitch.tv/${name}`;
+        profileImage.style.display = 'block';
+
+        // Show the streamer info and set text
+        streamerInfo.style.display = 'block';
+        loggedInStatus.textContent = `Logged in as\n${name}`;
+
+    });
+
+    // Save State Button
     saveStateButton.addEventListener('click', () => {
         console.log('Save State button clicked');
         window.electronAPI.saveState();
     });
 
     window.electronAPI.onStateSaved((message) => {
-        console.log(message);
+        console.log('State Saved:', message);
         alert(message);
     });
 
+    // Reset State Button
     resetStateButton.addEventListener('click', () => {
         console.log('Reset State button clicked');
         window.electronAPI.resetState();
     });
 
     window.electronAPI.onStateReset((message) => {
-        console.log(message);
+        console.log('State Reset:', message);
         alert(message);
     });
 
+    // Navigation Logic
     function navigate(tab) {
         console.log(`Navigating to: ${tab}`);
-        // Placeholder for future dynamic content logic
+        mainContent.innerHTML = `<p>Currently in: ${tab.charAt(0).toUpperCase() + tab.slice(1)} Tab</p>`;
     }
 </script>
 </body>

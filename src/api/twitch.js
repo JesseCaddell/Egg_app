@@ -76,7 +76,13 @@ export async function getStreamerInfo() {
         const user = response.data.data[0];
         console.log('Logged-in User:', user.display_name);
         console.log('Broadcaster ID:', user.id);
-        return user;
+        console.log('Profile Image URL:', user.profile_image_url); // Add this log
+
+        return {
+            name: user.display_name,
+            id: user.id,
+            profileImage: user.profile_image_url,
+        };
     } catch (error) {
         console.error('Error fetching streamer info:', error.message);
     }

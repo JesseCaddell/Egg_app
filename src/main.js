@@ -129,16 +129,33 @@ ipcMain.on('log-into-twitch', async () => {
             if (accessToken) {
                 clearInterval(checkAccessToken);
 
-                const user = await getStreamerInfo();
-                const username = user?.display_name || 'Unknown User';
+                try {
+                    const user = await getStreamerInfo();
+                    if (user) {
+                        const { name, profileImage } = user;
 
-                mainWindow.webContents.send('login-status', `Logged in as ${username}`);
+                        console.log(`Logged in as ${name}`);
+                        mainWindow.webContents.send('login-status', `Logged in as ${name}`);
 
-                // Load the saved state AFTER successful login
-                loadState();
+                        // Send the streamer's profile image and name to the frontend
+                        mainWindow.webContents.send('streamer-info', {
+                            name: name,
+                            profileImage: profileImage,
+                        });
 
-                // Start the EventSub WebSocket after successful login
-                mainWindow.webContents.send('start-eventsub');
+                        // Load the saved state AFTER successful login
+                        loadState();
+
+                        // Start the EventSub WebSocket after successful login
+                        mainWindow.webContents.send('start-eventsub');
+                    } else {
+                        console.error('Failed to fetch user information.');
+                        mainWindow.webContents.send('login-status', 'Login failed');
+                    }
+                } catch (fetchError) {
+                    console.error('Error fetching user info:', fetchError.message);
+                    mainWindow.webContents.send('login-status', 'Login failed');
+                }
             } else if (++attempts >= maxAttempts) {
                 clearInterval(checkAccessToken);
                 console.error('Failed to retrieve access token.');
@@ -150,6 +167,7 @@ ipcMain.on('log-into-twitch', async () => {
         mainWindow.webContents.send('login-status', 'Login failed');
     }
 });
+
 
 // Handle save state trigger
 ipcMain.on('save-state', () => {
