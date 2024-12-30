@@ -127,29 +127,37 @@
         }
 
         .egg-item {
-            width: calc((100% - 40px) / 3);
-            box-sizing: border-box;
+            width: 100%; /* Default to full width */
+            max-width: 200px; /* Limit size for eggs */
             background-color: transparent;
             border-radius: 5px;
             padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            box-sizing: border-box;
         }
 
-        /*.egg-item.single {*/
-        /*    width: 100%; !* Single egg takes full width *!*/
-        /*}*/
+        .egg-item.single {
+            width: 50%; /* Single egg takes full width */
+        }
 
-        /*.egg-item.double {*/
-        /*    width: calc(50% - 20px); !* Two eggs split evenly *!*/
-        /*}*/
+        .egg-item.double {
+            width: calc(50% - 20px); /* Two eggs split evenly */
+        }
+
+        .egg-item.triple {
+            width: calc(33.33% - 20px); /* Three eggs split evenly with gap */
+        }
 
         /* Highlighted egg (selected) */
         .egg-selected {
             background-color: #c1f0c1;
             border: 2px solid #2ecc71;
             border-radius: 10px;
+            padding: 10px;
+            box-sizing: border-box; /* Ensure padding doesn't affect size */
+            width: 100%; /* Ensure highlight fully surrounds the egg */
         }
 
         /* Hide all tabs by default except the home tab */
@@ -180,7 +188,6 @@
         <button onclick="navigate('home')">Home</button>
         <button onclick="navigate('eggs')">Eggs</button>
         <button onclick="navigate('redeems')">Redeems</button>
-        <button onclick="navigate('hatching')">Hatching</button>
         <button onclick="navigate('creatures')">Creatures</button>
         <!-- Streamer Info -->
         <div id="streamer-info" style="display: none;">
@@ -315,55 +322,46 @@
 
     // Load eggs into egg-list
     function loadEggs() {
-        eggList.innerHTML = ''; // Clear the current list
-        const eggContainer = document.createElement('div');
-        eggContainer.id = 'egg-list';
-        eggContainer.style.display = 'flex';
-        eggContainer.style.flexWrap = 'wrap';
-        eggContainer.style.gap = '20px';
+        eggList.innerHTML = ''; // Clear existing eggs
 
         selectedEggs.forEach((egg, index) => {
             const eggItem = document.createElement('div');
-            eggItem.classList.add('egg-item'); // Base class
+            eggItem.classList.add('egg-item');
 
-            // Dynamically adjust layout for single and double eggs
-            // If there's only 1 egg, it takes full width
+            // Assign layout classes based on number of eggs
             if (selectedEggs.length === 1) {
                 eggItem.classList.add('single');
-            }
-            // If there are 2 eggs, they split evenly
-            else if (selectedEggs.length === 2) {
+            } else if (selectedEggs.length === 2) {
                 eggItem.classList.add('double');
+            } else if (selectedEggs.length >= 3) {
+                eggItem.classList.add('triple');
             }
-            // For more than 2, the default width calculation will allow up to 3 columns if space allows
 
-            // Highlight if selected
+            // Highlight selected egg
             if (selectedEggIndex === index) {
                 eggItem.classList.add('egg-selected');
             }
 
             eggItem.innerHTML = `
-                <div>
-                    ${
+            <div>
+                ${
                 egg.filePath.endsWith('.mp4')
                     ? `<video src="${egg.filePath}" width="100" height="100" controls></video>`
                     : `<img src="${egg.filePath}" width="100" height="100" alt="egg"/>`
             }
-                </div>
-                <div>
-                    <p id="egg-name-${index}">${egg.name}</p>
-                    <button onclick="editEggName(${index})">Name</button><br>
-                    <button onclick="removeEgg(${index})" style="margin-top: 5px;">Remove</button><br>
-                    <button onclick="selectEgg(${index})" style="margin-top: 5px;">Select</button>
-                </div>
-            `;
-            eggContainer.appendChild(eggItem);
+            </div>
+            <div>
+                <p id="egg-name-${index}">${egg.name}</p>
+                <button onclick="editEggName(${index})">Edit</button><br>
+                <button onclick="removeEgg(${index})" style="margin-top: 5px;">Remove</button><br>
+                <button onclick="selectEgg(${index})" style="margin-top: 5px;">Select</button>
+            </div>
+        `;
+
+            eggList.appendChild(eggItem);
         });
 
-        eggList.appendChild(eggContainer);
-
-        // Update the home tab if currently on it
-        updateHomeTab();
+        updateHomeTab(); // Ensure home tab reflects selection
     }
 
     // Add new egg via file dialog
@@ -390,14 +388,11 @@
         window.electronAPI.saveEggs(selectedEggs);
     };
 
-    // Edit egg name
+    // Edit egg
     window.editEggName = function(index) {
-        const eggNameElement = document.getElementById(`egg-name-${index}`);
-        const currentName = selectedEggs[index].name;
-        eggNameElement.innerHTML = `
-            <input type="text" id="edit-input-${index}" value="${currentName}" style="width: 80px; margin-right: 5px;">
-            <button onclick="saveEggName(${index})">Save</button>
-        `;
+        const egg = selectedEggs[index];
+        localStorage.setItem('currentEgg', JSON.stringify(egg));
+        window.location.href = 'edit-egg.html';
     };
 
     // Save egg name
