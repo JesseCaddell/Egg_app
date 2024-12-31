@@ -241,9 +241,6 @@
 <!-- Script Logic -->
 <script>
     // DOM Elements
-    const loginScreen = document.getElementById('login-screen');
-    const mainApp = document.getElementById('main-app');
-    const loginButton = document.getElementById('login-button');
     const saveStateButton = document.getElementById('save-state-button');
     const resetStateButton = document.getElementById('reset-state-button');
     const addEggButton = document.getElementById('add-egg-button');
@@ -252,6 +249,8 @@
 
     let selectedEggs = [];
     let selectedEggIndex = null; // Track which egg is selected
+
+    // -----------LOGIN BUTTON AND DIV------------- //
 
     // Handle login status and UI transition
     const loginSection = document.getElementById('login-section');
@@ -325,6 +324,8 @@
 
     // Initialize on page load
     updateLoginSection();
+
+    // --------- SAVE AND LOAD STATES ----------- //
 
     // Save State Button
     saveStateButton.addEventListener('click', () => {
