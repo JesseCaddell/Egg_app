@@ -5,7 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveState: () => ipcRenderer.send('save-state'),
     resetState: () => ipcRenderer.send('reset-state'),
     selectEggFile: () => ipcRenderer.invoke('select-egg-file'),
-    saveEggs: (eggFiles) => ipcRenderer.send('save-eggs', eggFiles),
+    saveEggs: (eggFiles, selectedIndex) => ipcRenderer.send('save-eggs', eggFiles, selectedIndex),
     requestEggs: () => ipcRenderer.send('get-eggs'),
 
     receiveLoginStatus: (callback) => {
@@ -19,6 +19,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     onStateReset: (callback) => {
         ipcRenderer.on('state-reset', (event, message) => callback(message));
+    },
+    onStateRestored: (callback) => {
+        ipcRenderer.on('state-restored', (event, restoredState) => {
+            callback(restoredState);
+        });
     },
     loadEggs: (callback) => ipcRenderer.on('load-eggs', (event, eggs) => callback(eggs)),
 });

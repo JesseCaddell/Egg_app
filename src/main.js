@@ -37,7 +37,7 @@ console.log('WebSocket server running on ws://localhost:8080');
 
 // ---------- State Management Helper Functions ----------
 const stateFilePath = path.join(__dirname, 'state.json'); // Path to state file
-let appState = { currencies: {}, thresholds: {}, eggs: [] }; // Default app state
+let appState = { currencies: {}, thresholds: {}, eggs: [], selectedEggIndex: null }; // Default app state
 
 // Save state to file
 function saveState() {
@@ -52,11 +52,9 @@ function loadState() {
         appState = JSON.parse(fileContent);
         console.log('State loaded:', appState);
 
-        // Broadcast the loaded state to the overlay
-        broadcastMessage({
-            type: 'state_restored',
-            data: appState,
-        });
+    // Let the front-end know the state is ready
+        mainWindow.webContents.send('state-restored', appState);
+
     } else {
         console.log('No state file found. Using default state.');
     }
@@ -64,7 +62,7 @@ function loadState() {
 
 // Reset state to default values
 function resetState() {
-    appState = { currencies: {}, thresholds: {}, eggs: [] }; // Reset to default state
+    appState = { currencies: {}, thresholds: {}, eggs: [], selectedEggIndex: null }; // Reset to default state
     fs.writeFileSync(stateFilePath, JSON.stringify(appState, null, 2), 'utf-8');
     console.log('State reset to default:', appState);
 }
@@ -198,10 +196,11 @@ ipcMain.handle('select-egg-file', async () => {
 });
 
 // Handle saving eggs to state
-ipcMain.on('save-eggs', (event, eggFiles) => {
+ipcMain.on('save-eggs', (event, eggFiles, selIndex) => {
     appState.eggs = eggFiles;
+    appState.selectedEggIndex = selIndex;
     saveState();
-    console.log('Eggs saved to state:', appState.eggs);
+    console.log('Eggs saved to state:', appState.eggs, 'SelectedIndex:', selIndex);
 });
 
 // Handle request for eggs

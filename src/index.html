@@ -420,11 +420,7 @@
     resetStateButton.addEventListener('click', () => {
         console.log('Reset State button clicked');
         window.electronAPI.resetState();
-    });
 
-    window.electronAPI.onStateReset((message) => {
-        console.log('State Reset:', message);
-        alert(message);
     });
 
     // Load eggs into egg-list
@@ -477,7 +473,7 @@
         if (result) {
             selectedEggs.push({ name: `Egg ${selectedEggs.length + 1}`, filePath: result });
             loadEggs();
-            window.electronAPI.saveEggs(selectedEggs);
+            window.electronAPI.saveEggs(selectedEggs, selectedEggIndex);
         }
     });
 
@@ -492,7 +488,7 @@
             selectedEggIndex--;
         }
         loadEggs();
-        window.electronAPI.saveEggs(selectedEggs);
+        window.electronAPI.saveEggs(selectedEggs, selectedEggIndex);
     };
 
     // Edit egg
@@ -536,7 +532,7 @@
         }
 
         // Save the updated array of eggs to main
-        window.electronAPI.saveEggs(selectedEggs);
+        window.electronAPI.saveEggs(selectedEggs, selectedEggIndex); //maybe dont need selectedEggIndex
 
         // Re-render the eggs list
         loadEggs();
@@ -551,6 +547,9 @@
     window.selectEgg = function(index) {
         selectedEggIndex = index;
         loadEggs();
+
+        // Save the updated index to main:
+        window.electronAPI.saveEggs(selectedEggs, selectedEggIndex);
     };
 
     // Update the Home tab based on selection
@@ -618,6 +617,27 @@
             // Then render them in the UI
             loadEggs();
         });
+    });
+
+    window.electronAPI.onStateRestored((restoredState) => {
+        console.log('State restored from main:', restoredState);
+
+        //Overwrite local arrays
+        selectedEggs = restoredState.eggs || [];
+        selectedEggIndex = restoredState.selectedEggIndex || null;
+
+        //Re-render
+        loadEggs();
+        updateHomeTab();
+    });
+
+    window.electronAPI.onStateReset((message) => {
+        console.log('State Reset:', message);
+
+        selectedEggs = [];
+        selectedEggIndex = null;
+
+        loadEggs();
     });
 </script>
 </body>
