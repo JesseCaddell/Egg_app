@@ -80,13 +80,6 @@
 
         /* Buttons section */
 
-        /*.button-group button {*/
-        /*    margin: 10px;*/
-        /*    padding: 10px 20px;*/
-        /*    font-size: 16px;*/
-        /*    cursor: pointer;*/
-        /*}*/
-
         /* For the Home tab’s buttons */
         .home-button-group {
             display: flex;
@@ -100,6 +93,10 @@
             font-size: 16px;
             cursor: pointer;
             border-radius: 5px;
+            width: 50%;
+        }
+        .home-button-group button:hover {
+            background-color: antiquewhite;
         }
 
         /* For the sidebar's login/logout buttons */
@@ -112,7 +109,7 @@
 
         .sidebar-button-group button {
             display: inline-block;
-            width: auto;
+            width: 70%;
             text-align: center;
             margin: 5px;
             padding: 8px 14px;
@@ -122,22 +119,6 @@
             border: none;
             transition: background-color 0.2s ease-in-out;
             box-sizing: border-box;
-        }
-
-        .logout-button {
-            background-color: #e74c3c;
-            color: #ecf0f1;
-        }
-        .logout-button:hover {
-            background-color: #d62c1a;
-        }
-
-        .login-button {
-            background-color: #2c3e50;
-            color: #ecf0f1;
-        }
-        .login-button:hover {
-            background-color: #34495e;
         }
 
         /* Streamer Info */
