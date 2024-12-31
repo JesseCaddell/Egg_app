@@ -12,15 +12,6 @@
             overflow: hidden;
         }
 
-        /* Login Page */
-        #login-screen {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            background-color: #ecf0f1;
-            text-align: center;
-        }
 
         #login-screen button {
             padding: 10px 20px;
@@ -88,11 +79,65 @@
         }
 
         /* Buttons section */
-        .button-group button {
+
+        /*.button-group button {*/
+        /*    margin: 10px;*/
+        /*    padding: 10px 20px;*/
+        /*    font-size: 16px;*/
+        /*    cursor: pointer;*/
+        /*}*/
+
+        /* For the Home tab’s buttons */
+        .home-button-group {
+            display: flex;
+            justify-content: center;  /* center horizontally */
+            margin-top: 10px;         /* optional extra spacing */
+        }
+
+        .home-button-group button {
             margin: 10px;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
+            border-radius: 5px;
+        }
+
+        /* For the sidebar's login/logout buttons */
+        .sidebar-button-group {
+            display: flex;
+            justify-content: center;  /* center horizontally in the sidebar */
+            align-items: center;      /* vertically center if needed */
+            margin-top: 5px;
+        }
+
+        .sidebar-button-group button {
+            display: inline-block;
+            width: auto;
+            text-align: center;
+            margin: 5px;
+            padding: 8px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: none;
+            transition: background-color 0.2s ease-in-out;
+            box-sizing: border-box;
+        }
+
+        .logout-button {
+            background-color: #e74c3c;
+            color: #ecf0f1;
+        }
+        .logout-button:hover {
+            background-color: #d62c1a;
+        }
+
+        .login-button {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+        .login-button:hover {
+            background-color: #34495e;
         }
 
         /* Streamer Info */
@@ -119,6 +164,7 @@
             line-height: 1.2;
             margin: 0;
         }
+
 
         #login-section {
             position: absolute;
@@ -205,7 +251,7 @@
             <div id="home-content">
                 <p>No egg selected!</p>
             </div>
-            <div class="button-group">
+            <div class="home-button-group">
                 <button id="save-state-button">Save Current State</button>
                 <button id="reset-state-button">Reset State</button>
             </div>
@@ -299,12 +345,20 @@
             <p id="logged-in-status" style="color: #ecf0f1; font-size: 12px; word-wrap: break-word; line-height: 1.2; margin: 0;">
                 Logged in as<br>${loginData.name}
             </p>
+            <div class="sidebar-button-group">
+                <button id="logout-button" class="logout-button">Logout</button>
+            </div>
         `;
+            const logoutButton = document.getElementById('logout-button');
+            logoutButton.addEventListener('click', () => {
+                logout();
+            });
+
         } else {
             loginSection.innerHTML = `
-            <button id="login-button" style="padding: 10px 20px; font-size: 14px; cursor: pointer; border: none; background-color: #2c3e50; color: #ecf0f1; border-radius: 5px;">
-                Log into Twitch
-            </button>
+            <div class="sidebar-button-group">
+                <button id="login-button" class="login-button">Log into Twitch</button>
+            </div>
         `;
             const loginButton = document.getElementById('login-button');
             loginButton.addEventListener('click', () => {
@@ -312,6 +366,19 @@
                 window.electronAPI.logIntoTwitch();
             });
         }
+    }
+
+    // Log out function
+    function logout() {
+        console.log('Logout button clicked');
+
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('loginData');
+
+        isLoggedIn = false;
+        loginData = {};
+
+        updateLoginSection();
     }
 
     // Listener for streamer-info
@@ -325,8 +392,8 @@
         isLoggedIn = true;
         loginData = { name, profileImage };
 
-        localStorage.setItem('isLoggedIn', JSON.stringify(isLoggedIn));
-        localStorage.setItem('loginData', JSON.stringify(loginData));
+        // localStorage.setItem('isLoggedIn', JSON.stringify(isLoggedIn));
+        // localStorage.setItem('loginData', JSON.stringify(loginData));
 
         // Update the login section to show the profile image + username
         updateLoginSection();
@@ -342,8 +409,8 @@
 
 
             // Save to localStorage
-            localStorage.setItem('isLoggedIn', JSON.stringify(isLoggedIn));
-            localStorage.setItem('loginData', JSON.stringify(loginData));
+            // localStorage.setItem('isLoggedIn', JSON.stringify(isLoggedIn));
+            // localStorage.setItem('loginData', JSON.stringify(loginData));
 
             // Refresh the login section
             updateLoginSection();
