@@ -216,6 +216,35 @@
             <h2>Select Your Eggs</h2>
             <button id="add-egg-button" style="margin-bottom: 15px;">Add Egg</button>
             <div id="egg-list" style="margin-top: 10px;"></div>
+
+            <!-- Hidden Edit Form -->
+            <div id="edit-egg-container" style="display: none; margin-top: 20px; border: 1px solid #ccc; padding: 10px;">
+                <h3>Edit Egg</h3>
+                <div>
+                    <label for="edit-egg-name">Egg Name:</label><br />
+                    <input type="text" id="edit-egg-name" style="width: 100%;" />
+                </div>
+                <div style="margin-top: 10px;">
+                    <label for="edit-hatching-animation">Hatching Animation:</label><br />
+                    <input type="file" id="edit-hatching-animation" accept="video/*" />
+                </div>
+                <div style="margin-top: 10px;">
+                    <label for="edit-redeems">Associated Redeems:</label><br />
+                    <textarea id="edit-redeems" style="width: 100%;" rows="3"></textarea>
+                </div>
+                <div style="margin-top: 10px;">
+                    <label for="edit-image-size">Image Size:</label><br />
+                    <input type="text" id="edit-image-size" placeholder="e.g. 100x100" style="width: 100%;" />
+                </div>
+                <div style="margin-top: 10px;">
+                    <label for="edit-position">Position:</label><br />
+                    <input type="text" id="edit-position" placeholder="e.g. top-left, center" style="width: 100%;" />
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button type="button" onclick="cancelEdit()">Cancel</button>
+                    <button type="button" onclick="saveEggEdits()">Save</button>
+                </div>
+            </div>
         </div>
 
         <!-- Redeems Tab -->
@@ -249,6 +278,7 @@
 
     let selectedEggs = [];
     let selectedEggIndex = null; // Track which egg is selected
+    let editingEggIndex = null;  // keep track of which egg is being edited
 
     // -----------LOGIN BUTTON AND DIV------------- //
 
@@ -419,21 +449,55 @@
 
     // Edit egg
     window.editEggName = function(index) {
+        editingEggIndex = index;
         const egg = selectedEggs[index];
-        localStorage.setItem('currentEgg', JSON.stringify(egg));
-        window.location.href = 'edit-egg.html';
+
+        // Populate the form fields with the existing egg data
+        document.getElementById('edit-egg-name').value = egg.name || '';
+        document.getElementById('edit-redeems').value = egg.redeems || '';
+        document.getElementById('edit-image-size').value = egg.imageSize || '';
+        document.getElementById('edit-position').value = egg.position || '';
+
+        // Show the edit container
+        document.getElementById('edit-egg-container').style.display = 'block';
     };
 
-    // Save egg name
-    window.saveEggName = function(index) {
-        const inputBox = document.getElementById(`edit-input-${index}`);
-        const newName = inputBox.value.trim();
-        if (newName) {
-            selectedEggs[index].name = newName;
-            loadEggs();
-            window.electronAPI.saveEggs(selectedEggs);
+    function cancelEdit() {
+        // Hide the edit container
+        document.getElementById('edit-egg-container').style.display = 'none';
+        editingEggIndex = null;
+    }
+
+    function saveEggEdits() {
+        if (editingEggIndex == null) return;
+
+        const egg = selectedEggs[editingEggIndex];
+
+        // Update egg fields
+        egg.name = document.getElementById('edit-egg-name').value.trim();
+        egg.redeems = document.getElementById('edit-redeems').value.trim();
+        egg.imageSize = document.getElementById('edit-image-size').value.trim();
+        egg.position = document.getElementById('edit-position').value.trim();
+
+        // If user uploaded a new video file, capture it
+        const animationFile = document.getElementById('edit-hatching-animation').files[0];
+        if (animationFile) {
+            // In a real scenario, you'd likely store the path or copy the file somewhere
+            egg.hatchingAnimation = animationFile.path;
+            // or handle uploading the file into your system
         }
-    };
+
+        // Save the updated array of eggs to main
+        window.electronAPI.saveEggs(selectedEggs);
+
+        // Re-render the eggs list
+        loadEggs();
+
+        // Hide the edit container again
+        document.getElementById('edit-egg-container').style.display = 'none';
+        editingEggIndex = null;
+    }
+
 
     // Select an egg
     window.selectEgg = function(index) {
@@ -492,6 +556,21 @@
             console.error(`Tab "${tab}" not found.`);
         }
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        window.electronAPI.requestEggs();
+
+        window.electronAPI.loadEggs((eggs) => {
+            console.log('Eggs from main:', eggs);
+
+            selectedEggs = eggs.map((egg, index) =>
+                typeof egg === 'string' ? { name: `Egg ${index + 1}`, filePath: egg } : egg
+            );
+
+            // Then render them in the UI
+            loadEggs();
+        });
+    });
 </script>
 </body>
 </html>
